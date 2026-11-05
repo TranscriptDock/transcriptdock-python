@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling==1.33.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "transcriptdock"
+version = "0.1.0"
+description = "Python client for the Transcript Dock video transcription API"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Transcript Dock", email = "transcriptdock@volods.com"}]
+keywords = ["transcription", "youtube", "tiktok", "subtitles", "api", "mcp"]
+classifiers = ["Programming Language :: Python :: 3", "Operating System :: OS Independent"]
+dependencies = []
+
+[project.urls]
+Homepage = "https://www.transcriptdock.com"
+Documentation = "https://www.transcriptdock.com/docs"
+Repository = "https://github.com/TranscriptDock/transcriptdock-python"
+Issues = "https://github.com/TranscriptDock/transcriptdock-python/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/transcriptdock"]
