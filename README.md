@@ -3,15 +3,13 @@
 A synchronous client for the [Transcript Dock API](https://www.transcriptdock.com/docs).
 Python 3.10 or newer. No runtime dependencies.
 
-Release status: source and local distribution preparation. Version 0.1.0 is
-not published on PyPI yet. Install from this directory:
+Install from PyPI:
 
 ```sh
-python -m pip install .
+python -m pip install transcriptdock
 ```
 
-Once a PyPI release is verified, the install command will be
-`python -m pip install transcriptdock`.
+For local development, use `python -m pip install .` from this directory.
 
 ## Submit and read a transcript
 
