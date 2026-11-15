@@ -118,7 +118,7 @@ version with `uv publish`; verify the public package version afterward. Never
 put registry or API credentials in this directory. A local build is not a release.
 
 
-For the first release, add a pending trusted publisher in PyPI with:
+The PyPI trusted publisher uses:
 
 | Field | Value |
 | --- | --- |
@@ -128,6 +128,6 @@ For the first release, add a pending trusted publisher in PyPI with:
 | Workflow filename | `release.yml` |
 | Environment | `pypi` |
 
-Then run the GitHub Actions workflow on `main` with `publish` enabled. The
-normal push workflow checks and builds only. Sign-in and initial publisher
-registration are still required; no PyPI account has been created for you.
+Run the GitHub Actions workflow on `main` with `publish` enabled for an
+authorized new release. The normal push workflow checks and builds only.
+The initial 0.1.0 release and publisher registration completed on 2026-11-15.
