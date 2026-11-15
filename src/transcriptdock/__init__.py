@@ -6,7 +6,7 @@ import math
 import re
 import time
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode, urlsplit
+from urllib.parse import quote, unquote, urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 __version__ = "0.1.0"
@@ -79,9 +79,14 @@ class TranscriptDock:
 
     def request(self, method, path, *, body=None, query=None, idempotency_key=None, text=False, timeout=None):
         """Call a public /v1 endpoint; no redirects or automatic retries."""
+        if not isinstance(method, str):
+            raise ValueError("Provide an HTTP method.")
+        method = method.upper()
+        if method not in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"):
+            raise ValueError("Provide a supported HTTP method.")
         if not isinstance(path, str) or not path.startswith("/v1/") or any(c in path for c in ("?", "#", "\\")):
             raise ValueError("Use a /v1/ path and pass query parameters separately.")
-        if any(part in (".", "..") for part in path.split("/")):
+        if any(part in (".", "..") for part in unquote(path).split("/")):
             raise ValueError("API paths cannot contain traversal segments.")
         needs_key = method == "POST" and (path in ("/v1/jobs", "/v1/batches", "/v1/video-discoveries", "/v1/language-discoveries") or path.endswith("/retry"))
         if needs_key and idempotency_key is None:

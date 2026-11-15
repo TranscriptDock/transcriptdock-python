@@ -33,6 +33,9 @@ class Handler(BaseHTTPRequestHandler):
             code = 429
             payload = {"error": {"code": "RATE_LIMITED", "message": KEY,
                                   "retryable": True, "retry_after_seconds": 4}, "request_id": "fixture-request"}
+        elif self.path in ("/v1/budget", "/v1/conflict", "/v1/jobs/not-owned"):
+            code, label = {"/v1/budget": (402, "BUDGET_EXCEEDED"), "/v1/conflict": (409, "IDEMPOTENCY_CONFLICT"), "/v1/jobs/not-owned": (404, "NOT_FOUND")}[self.path]
+            payload = {"error": {"code": label, "message": "Fixture rejection", "retryable": False}}
         elif self.path == "/v1/gateway":
             code, payload = 502, b"<html>upstream failed</html>"
         elif self.path == "/v1/malformed":
@@ -94,6 +97,16 @@ class ClientTests(unittest.TestCase):
             self.client.request("GET", "/v1/malformed")
         self.assertEqual(ctx.exception.code, "INVALID_RESPONSE")
 
+    def test_budget_conflict_and_inaccessible_job_errors_are_not_retried(self):
+        for path, status, code in [("/v1/budget", 402, "BUDGET_EXCEEDED"),
+                                   ("/v1/conflict", 409, "IDEMPOTENCY_CONFLICT"),
+                                   ("/v1/jobs/not-owned", 404, "NOT_FOUND")]:
+            with self.assertRaises(ApiError) as ctx:
+                self.client.request("GET", path)
+            self.assertEqual((ctx.exception.status, ctx.exception.code), (status, code))
+            self.assertFalse(ctx.exception.retryable)
+        self.assertEqual(len(Handler.calls), 3)
+
     def test_redirect_never_followed(self):
         with self.assertRaises(ApiError) as ctx:
             self.client.request("GET", "/v1/redirect")
@@ -116,9 +129,11 @@ class ClientTests(unittest.TestCase):
         for key in (None, "short", "has\nnewline"):
             with self.assertRaises(ValueError):
                 self.client.create_job({}, idempotency_key=key)
-        for path in ("https://example.com", "/v1/../secret", "/v1/jobs?x=1"):
+        for path in ("https://example.com", "/v1/../secret", "/v1/%2e%2e/secret", "/v1/jobs?x=1"):
             with self.assertRaises(ValueError):
                 self.client.request("GET", path)
+        with self.assertRaises(ValueError):
+            self.client.request("post", "/v1/jobs", body={})
         self.assertEqual(Handler.calls, [])
 
     def test_polling_terminal_failure_and_timeout_preserve_state(self):
