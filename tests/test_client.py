@@ -22,11 +22,18 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         self.respond()
 
+    def do_DELETE(self):
+        self.respond()
+
     def respond(self):
         body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
         self.calls.append((self.command, self.path, dict(self.headers), body))
         code, headers = 200, {}
         payload = {"id": "fixture-job", "status": "succeeded", "future_field": 42}
+        if self.path == "/v1/no-content":
+            self.send_response(204)
+            self.end_headers()
+            return
         if self.path == "/v1/redirect":
             code, headers, payload = 302, {"Location": "/v1/leak"}, {}
         elif self.path == "/v1/rate-limit":
@@ -38,6 +45,8 @@ class Handler(BaseHTTPRequestHandler):
             payload = {"error": {"code": label, "message": "Fixture rejection", "retryable": False}}
         elif self.path == "/v1/gateway":
             code, payload = 502, b"<html>upstream failed</html>"
+        elif self.path == "/v1/empty-ok":
+            payload = b""
         elif self.path == "/v1/malformed":
             payload = b"not json"
         elif self.path.endswith("/export?format=srt"):
@@ -112,6 +121,13 @@ class ClientTests(unittest.TestCase):
             self.client.request("GET", "/v1/redirect")
         self.assertEqual(ctx.exception.status, 302)
         self.assertEqual([x[1] for x in Handler.calls], ["/v1/redirect"])
+
+    def test_no_content_success_returns_empty_result(self):
+        self.assertEqual(self.client.request("DELETE", "/v1/no-content"), {})
+        self.assertEqual(self.client.request("DELETE", "/v1/no-content", text=True), "")
+        with self.assertRaises(ApiError) as ctx:
+            self.client.request("GET", "/v1/empty-ok")
+        self.assertEqual(ctx.exception.code, "INVALID_RESPONSE")
 
     def test_query_and_id_encoding_and_raw_export(self):
         self.client.list_jobs(cursor="a/b?c&d", limit=7)

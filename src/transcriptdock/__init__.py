@@ -9,7 +9,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, unquote, urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 class ApiError(Exception):
@@ -107,6 +107,7 @@ class TranscriptDock:
         request = Request(url, data=data, headers=headers, method=method)
         try:
             with self._opener.open(request, timeout=self.timeout if timeout is None else _positive(timeout, "timeout")) as response:
+                status = response.status
                 raw = response.read().decode("utf-8")
         except HTTPError as exc:
             try:
@@ -126,6 +127,9 @@ class TranscriptDock:
             raise ApiError("NETWORK_ERROR", "Could not reach the API. Check the job before retrying a submission.", retryable=True) from None
         except UnicodeError:
             raise ApiError("INVALID_RESPONSE", "The API response is not UTF-8 text.") from None
+        if status == 204:
+            # No Content: a success without a body, for example deleting a webhook endpoint.
+            return "" if text else {}
         if text:
             return raw
         try:

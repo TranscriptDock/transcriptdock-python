@@ -83,6 +83,8 @@ signatures in your receiver according to the API documentation.
 later. It rejects absolute URLs, traversal paths and redirects. Custom API
 origins must use HTTPS, except loopback HTTP for local development. The default
 origin is `https://www.transcriptdock.com`; the apex domain redirects.
+A success with no body (204 No Content, such as deleting a webhook endpoint)
+returns an empty dictionary, or an empty string with `text=True`.
 
 ## Errors
 
